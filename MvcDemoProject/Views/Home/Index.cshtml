@@ -1,0 +1,268 @@
+﻿@using MvcDemoProject.Models
+@model List<Contractors>
+
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container">
+    <h2>Контрагенты</h2>
+    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#myModal" onclick="clearTextBox();">Добавить нового</button><br /><br />
+    <table class="table table-bordered table-hover">
+        <thead>
+            <tr>
+                <th>
+                    Id
+                </th>
+                <th>
+                    Наименование
+                </th>
+                <th>
+                    ИНН
+                </th>
+                <th>
+                    Тип Контрагента
+                </th>
+                <th>
+                    Телефон
+                </th>
+                <th>
+                    Параметры
+                </th>
+            </tr>
+        </thead>
+        <tbody class="tbody"></tbody>
+    </table>
+</div>
+
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">×</button>
+                <h4 class="modal-title" id="myModalLabel">Добавить Контрагента</h4>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label for="contractorId">ID</label>
+                        <input type="text" class="form-control" id="contractorId" placeholder="Id" disabled="disabled" />
+                    </div>
+                    <div class="form-group">
+                        <label for="name">Наименование</label>
+                        <input type="text" class="form-control" id="name" placeholder="Наименование" />
+                    </div>
+                    <div class="form-group">
+                        <label for="inn">ИНН</label>
+                        <input type="number" class="form-control" id="inn" placeholder="ИНН" />
+                    </div>
+                    <div class="form-group">
+                        <label for="type">Тип Контрагента</label>
+                        <select class="form-control" id="typeSelectInput">
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Телефон</label>
+                        <input type="number" class="form-control" id="phone" placeholder="Телефон" />
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="btnAdd" onclick="return Add();">Добавить</button>
+                <button type="button" class="btn btn-primary" id="btnUpdate" style="display:none;" onclick="Update();">Обновить данные</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script type="text/javascript">    
+    $(document).ready(function () {
+        loadData();
+    });
+
+    function loadData() {
+            $.ajax({
+                url: "/Data/GetList",
+                type: "GET",
+                contentType: "application/json;charset=utf-8",
+                dataType: "json",
+                success: function (result) {
+                var html = '';
+                $.each(result.contractors, function (key, item) {
+                    html += '<tr>';
+                    html += '<td>' + item.keyId + '</td>';
+                    html += '<td>' + item.Name + '</td>';
+                    html += '<td>' + item.INN + '</td>';
+                    html += '<td>' + item.ContractorTypeId + '</td>';
+                    html += '<td>' + item.Phone + '</td>';
+                    html += '<td><a href="#" onclick="return getbyID(' + item.keyId + ')">Редактировать</a> | <a href="#" onclick="Delele(' + item.keyId + ')">Удалить</a></td>';
+                    html += '</tr>';
+                });
+                var selectInputContent;    
+                $.each(result.contractorTypes, function (key, item) {
+                    selectInputContent += "<option value=\"" + item.keyId + "\">" + item.Name + "</option>";
+                });
+                $('#typeSelectInput').html(selectInputContent);
+                $('.tbody').html(html);
+            },
+            error: function (errormessage) {
+                alert(errormessage.responseText);
+            }
+        });
+    }
+
+    function getbyID(keyId) {
+        $('#name').css('border-color', 'lightgrey');
+        $('#inn').css('border-color', 'lightgrey');
+        $('#type').css('border-color', 'lightgrey');
+        $('#phone').css('border-color', 'lightgrey');
+        $.ajax({
+            url: "/Data/GetList/" + keyId,
+            typr: "GET",
+            contentType: "application/json;charset=UTF-8",
+            dataType: "json",
+            success: function (result) {
+                $('#contractorId').val(result.contractors[0].keyId);
+                $('#name').val(result.contractors[0].Name);
+                $('#inn').val(result.contractors[0].INN);
+                $("#typeSelectInput").val(result.contractors[0].ContractorTypeId);
+                $('#phone').val(result.contractors[0].Phone);
+                $('#myModal').modal('show');
+                $('#btnUpdate').show();
+                $('#btnAdd').hide();
+            },
+            error: function (errormessage) {
+                alert(errormessage.responseText);
+            }
+        });
+        return false;
+    }
+
+    function Delele(id) {
+        var ans = confirm("Вы уверены что хотите удалить контрагента? Он может на вас обидеться!");
+        if (ans) {
+            $.ajax({
+                url: "/Data/Delete/" + id,
+                type: "POST",
+                contentType: "application/json;charset=UTF-8",
+                dataType: "json",
+                success: function (result) {
+                    alert(result.status);
+                    loadData();
+                },
+                error: function (errormessage) {
+                    alert(errormessage.responseText);
+                }
+            });
+        }
+    }
+
+    function Update() {
+        if (!validate()) {
+            return false;
+        }
+        var dataObj = {
+            keyId: $('#contractorId').val(),
+            Name: $('#name').val(),
+            INN: $('#inn').val(),
+            ContractorTypeId: $('select[id=typeSelectInput]').val(),
+            Phone: $('#phone').val(),
+        };
+        $.ajax({
+            url: "/Data/Update",
+            data: JSON.stringify(dataObj),
+            type: "POST",
+            contentType: "application/json;charset=utf-8",
+            dataType: "json",
+            success: function (result) {
+                alert(result.status);
+                loadData();
+                $('#myModal').modal('hide');
+                $('#name').val("");
+                $('#inn').val("");
+                $('#phone').val("");
+            },
+            error: function (errormessage) {
+                alert(errormessage.responseText);
+            }
+        });
+    }
+
+    function Add() {
+        if (!validate()) {
+            return false;
+        }
+        var dataObj = {
+            keyId: 0,
+            Name: $('#name').val(),
+            INN: $('#inn').val(),
+            ContractorTypeId: $('select[id=typeSelectInput]').val(),
+            Phone: $('#phone').val(),
+        };
+        $.ajax({
+            url: "/Data/Add",
+            data: JSON.stringify(dataObj),
+            type: "POST",
+            contentType: "application/json;charset=utf-8",
+            dataType: "json",
+            success: function (result) {
+                alert(result.status);
+                loadData();
+                $('#myModal').modal('hide');
+            },
+            error: function (errormessage) {
+                alert(errormessage.responseText);
+            }
+        });
+    }
+
+    function clearTextBox() {
+        $('#name').val("");
+        $('#inn').val("");
+        $('#phone').val("");
+        $('#btnUpdate').hide();
+        $('#btnAdd').show();
+        $('#Name').css('border-color', 'lightgrey');
+        $('#inn').css('border-color', 'lightgrey');
+        $('#phone').css('border-color', 'lightgrey');
+    }
+
+    function validate() {
+        var isValid = true;
+        var numberReg = new RegExp('^[0-9]*$');
+
+        if ($('#name').val().trim() == "" || $('#name').val().length > 100) {
+            alert("Поле 'Наименование' не должно быть пустым или превышать 100 символов");
+            $('#name').css('border-color', 'Red');
+            isValid = false;
+            return;
+        }
+        else {
+            $('#name').css('border-color', 'lightgrey');
+        }
+        if ($('#inn').val().length != 12 || !numberReg.test($('#inn').val())) {
+            alert("Поле 'ИНН' не должно быть пустым и состоять из 12 символов");
+            $('#inn').css('border-color', 'Red');
+            isValid = false;
+            return;
+        }
+        else {
+            $('#inn').css('border-color', 'lightgrey');
+        }
+
+        if ($('#phone').val().length != 10 || !numberReg.test($('#inn').val())) {
+            alert("Поле 'Телефон' не должно быть пустым и состоять из 10 символов");
+            $('#phone').css('border-color', 'Red');
+            isValid = false;
+            return;
+        }
+        else {
+            $('#phone').css('border-color', 'lightgrey');
+        }
+        return isValid;
+    }
+
+</script>>

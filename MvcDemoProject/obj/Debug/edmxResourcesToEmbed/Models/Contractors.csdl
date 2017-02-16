@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Schema Namespace="TestModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
+  <EntityType Name="Contractors">
+    <Key>
+      <PropertyRef Name="keyId" />
+    </Key>
+    <Property Name="keyId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+    <Property Name="Name" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+    <Property Name="INN" Type="String" MaxLength="12" FixedLength="false" Unicode="true" />
+    <Property Name="ContractorTypeId" Type="Int32" />
+    <Property Name="Phone" Type="String" MaxLength="10" FixedLength="false" Unicode="true" />
+    <NavigationProperty Name="ContractorType" Relationship="Self.fk_contractorType_id" FromRole="Contractors" ToRole="ContractorType" />
+  </EntityType>
+  <EntityType Name="ContractorType">
+    <Key>
+      <PropertyRef Name="keyId" />
+    </Key>
+    <Property Name="keyId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+    <Property Name="Name" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+    <NavigationProperty Name="Contractors" Relationship="Self.fk_contractorType_id" FromRole="ContractorType" ToRole="Contractors" />
+  </EntityType>
+  <Association Name="fk_contractorType_id">
+    <End Role="ContractorType" Type="Self.ContractorType" Multiplicity="0..1" />
+    <End Role="Contractors" Type="Self.Contractors" Multiplicity="*" />
+    <ReferentialConstraint>
+      <Principal Role="ContractorType">
+        <PropertyRef Name="keyId" />
+      </Principal>
+      <Dependent Role="Contractors">
+        <PropertyRef Name="ContractorTypeId" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <EntityContainer Name="DbEntities" annotation:LazyLoadingEnabled="true">
+    <EntitySet Name="Contractors" EntityType="Self.Contractors" />
+    <EntitySet Name="ContractorType" EntityType="Self.ContractorType" />
+    <AssociationSet Name="fk_contractorType_id" Association="Self.fk_contractorType_id">
+      <End Role="ContractorType" EntitySet="ContractorType" />
+      <End Role="Contractors" EntitySet="Contractors" />
+    </AssociationSet>
+  </EntityContainer>
+</Schema>
